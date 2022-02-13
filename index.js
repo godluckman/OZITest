@@ -1,5 +1,11 @@
-let count = 0,
-    selectArray =[];
+let count = 0;
+const selectArray =[],
+      openSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 5L5.92468 8L9 5" stroke="black" stroke-linejoin="round"/>
+                 </svg>`,
+      closeSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="5" viewBox="0 0 8 5" fill="none">
+                    <path d="M1 4L3.92468 1L7 4" stroke="black" stroke-linejoin="round"/>
+                  </svg>`;           
 
 const addContainer = () => {
     const container = document.createElement('div')
@@ -52,7 +58,7 @@ class Modal {
             const check = option.selected && 'checked' || '';
             const level = option.dataset.level && ` style="margin-left:${option.dataset.level}em"` || '';
             const display =  option.dataset.level && 'style="display:none"' || '';
-            const element = `<div class='option-container' ${display}>   
+            const element = `<div class='option-container' ${display} data-level="${option.dataset.level || 1}">   
                                 <input type="checkbox" class="checkbox" id="${option.value}" ${check}>
                                 <div class="drop"> 
                                 <p ${level}>${option.text}</p>
@@ -66,29 +72,57 @@ class Modal {
 
     addDropDown () {
         const options = document.querySelectorAll('.option-container');
-        console.log(' t o r e f', [...options]);
-
         options.forEach(o => {
-            if(o.nextSibling?.style.display === 'none'){
-                const element = `<div class="open">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                        <path d="M3 5L5.92468 8L9 5" stroke="black" stroke-linejoin="round"/>
-                                    </svg>
-                                </div>`
+            if(o.nextSibling?.style.display === 'none' && o.nextSibling?.dataset.level > o.dataset.level){
+                const element = `<div class="open">${openSVG}</div>`
                 o.lastElementChild.insertAdjacentHTML('beforeend', element);
             }
         });
         const dropdowns = document.querySelectorAll('.open');
         dropdowns.forEach(e => {
             e.addEventListener('click', (e) => {
-                console.log(e.currentTarget.parentNode.parentNode);
-                e.currentTarget.parentNode.parentNode.nextSibling.removeAttribute('style');
+                let nextSib = e.currentTarget.parentNode.parentNode.nextSibling;
+                const dataLevel = Number(e.currentTarget.parentNode.parentNode.dataset.level);
+                function RecursiveOpen(sibling, level){
+                    if (sibling.dataset.level <= level){
+                        return;
+                    }
+                    else if (sibling.dataset.level == level + 1){
+                        sibling.removeAttribute('style');
+                        if(sibling.nextSibling){
+                        return RecursiveOpen(sibling.nextSibling, level);
+                        }
+                        return;
+                    }
+                    else if(sibling.nextSibling){
+                        return RecursiveOpen(sibling.nextSibling, level);
+                    }
+                }
+                function RecursiveClose(sibling, level){
+                    if (sibling.dataset.level <= level){
+                        return;
+                    }
+                    else if(sibling.nextSibling){
+                        console.log(sibling);
+                        sibling.setAttribute('style', 'display:none')
+                        return RecursiveClose(sibling.nextSibling, level);
+                    }
+                }
+                if (e.currentTarget.className === 'open'){
+                e.currentTarget.className = 'close';
+                e.currentTarget.innerHTML = closeSVG;
+                RecursiveOpen(nextSib, dataLevel);
+                } else {
+                e.currentTarget.className = 'open';
+                e.currentTarget.innerHTML = openSVG;
+                RecursiveClose(nextSib, dataLevel);
+                }
             })
         })
     }
 
     createFooter(modal) {
-        const footer = `<div class="modal-footer">
+        const footer = `<div class="modal-footer" data-level="1">
                             <button class="apply-button">Применить</button>
                             <button class="clear-button">Очистить</button>
                         </div>`;
