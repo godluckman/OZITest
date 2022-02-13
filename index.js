@@ -9,12 +9,13 @@ const addContainer = () => {
 addContainer();
 
 class Modal {
-    constructor(data) {
+    constructor(data, num) {
+        this.num = num;
         this.data = data;
         this.createModal();
     }
 
-    createModal(){
+    createModal() {
         const container = document.querySelector('.container');
         const modalHeader = `<div id="myModal" class="modal">
                                 <div class="modal-content">
@@ -32,7 +33,7 @@ class Modal {
         const span = document.getElementsByClassName("close")[0];
         const content = document.querySelector('.modal-content');
         this.createSelect(content);
-
+        this.createFooter(modal);
 
         span.onclick = function() {
             modal.parentNode.removeChild(modal);
@@ -47,13 +48,93 @@ class Modal {
 
     createSelect (content) {
         const optionsArray = [...this.data]
-        console.log(optionsArray)
         optionsArray.forEach(option => {
-            const element = `<div>${option.text}</div>`
+            const check = option.selected && 'checked' || '';
+            const level = option.dataset.level && ` style="margin-left:${option.dataset.level}em"` || '';
+            const display =  option.dataset.level && 'style="display:none"' || '';
+            const element = `<div class='option-container' ${display}>   
+                                <input type="checkbox" class="checkbox" id="${option.value}" ${check}>
+                                <div class="drop"> 
+                                <p ${level}>${option.text}</p>
+                                </div>
+                             </div>`
             content.insertAdjacentHTML('beforeend', element);
-        })
-
+        });
+        this.addDropDown()
+        this.handleInput(optionsArray);
     }
+
+    addDropDown () {
+        const options = document.querySelectorAll('.option-container');
+        console.log(' t o r e f', [...options]);
+
+        options.forEach(o => {
+            if(o.nextSibling?.style.display === 'none'){
+                const element = `<div class="open">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                        <path d="M3 5L5.92468 8L9 5" stroke="black" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>`
+                o.lastElementChild.insertAdjacentHTML('beforeend', element);
+            }
+        });
+        const dropdowns = document.querySelectorAll('.open');
+        dropdowns.forEach(e => {
+            e.addEventListener('click', (e) => {
+                console.log(e.currentTarget.parentNode.parentNode);
+                e.currentTarget.parentNode.parentNode.nextSibling.removeAttribute('style');
+            })
+        })
+    }
+
+    createFooter(modal) {
+        const footer = `<div class="modal-footer">
+                            <button class="apply-button">Применить</button>
+                            <button class="clear-button">Очистить</button>
+                        </div>`;
+        modal.insertAdjacentHTML('beforeend', footer);
+        this.handleApply();
+        this.handleClear();
+    }
+
+    handleInput (optionsArray) {
+        const inputs = document.querySelectorAll('input[id]');
+        // console.log('inppppp', [...inputs]);
+        // console.log(optionsArray);
+        [...inputs].forEach(input => input.addEventListener('click', (e) => {
+            if (e.target.hasAttribute('checked')){
+                e.target.removeAttribute('checked')
+            } else {
+            e.target.setAttribute('checked', 'checked')
+            }
+        }))
+    }
+
+    handleApply () {
+        const apply = document.querySelector('.apply-button');
+        apply.addEventListener('click', ()=>{
+            const checkedId = [...document.querySelectorAll('input[checked]')].map(input => input.id);
+            const selectedNumber = checkedId.length
+            const input = document.querySelector(`.input${this.num}`);         
+            const button = document.querySelector(`.button${this.num}`);
+            button.innerText = `Показать выбранное (${selectedNumber})`;
+            [...this.data].map(o => {
+                if (o.hasAttribute('selected') && checkedId.indexOf(o.value) === -1) {
+                    o.removeAttribute('selected')
+                } else if (checkedId.indexOf(o.value) !== -1) {
+                o.setAttribute('selected', 'selected')
+                }
+            });
+            const selectedString = [...this.data.selectedOptions].map(option => option.text).join(', ');
+            selectedString ? input.value = selectedString : input.value = '';
+        })
+    }
+
+    handleClear () {
+        const clear = document.querySelector('.clear-button');
+        clear.addEventListener('click', ()=> [...document.querySelectorAll('input[checked]')].forEach(e => e.removeAttribute('checked')))
+    }
+
 }
 
 class Input {
@@ -65,7 +146,6 @@ class Input {
     }
 
     createInput(data) {
-        console.log('data', data)
         const container = document.querySelector('.container');
         const selected = this.getSelected(data)
         const sample = `<input class="input input${this.num}" placeholder="Код ОКРБ или наименование закупаемой продукции" readonly>`;
@@ -87,7 +167,7 @@ class Input {
         title.classList.add('title');
         title.textContent = 'Тендеры в роли Заказчика';
         const button = document.createElement('button');
-        button.classList.add('button');
+        button.classList.add('button', `button${this.num}`);
         button.innerText = `Показать выбранное (${this.counter})`
         head.append(title, button);
         input.before(head);
@@ -96,8 +176,8 @@ class Input {
 
     addListeners(input, button) {
        this.data.addEventListener('change', e => alert(e.target.value));
-       input.addEventListener('click', () => new Modal(this.data));
-       button.addEventListener('click', () => new Modal(this.data))
+       input.addEventListener('click', () => new Modal(this.data, this.num));
+       button.addEventListener('click', () => new Modal(this.data, this.num));
     }
 }
 
