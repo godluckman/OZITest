@@ -187,3 +187,7 @@ height: 20px;
     display: flex;
     align-items: center;
 }
+
+.open, .close{
+    min-width: 1em;
+}

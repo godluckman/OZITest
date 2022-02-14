@@ -5,7 +5,7 @@ const selectArray =[],
                  </svg>`,
       closeSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="5" viewBox="0 0 8 5" fill="none">
                     <path d="M1 4L3.92468 1L7 4" stroke="black" stroke-linejoin="round"/>
-                  </svg>`;           
+                  </svg>`;     
 
 const addContainer = () => {
     const container = document.createElement('div')
@@ -43,7 +43,6 @@ class Modal {
 
         span.onclick = function() {
             modal.parentNode.removeChild(modal);
-
         }
         window.onclick = function(event) {
             if (event.target === modal) {
@@ -67,7 +66,7 @@ class Modal {
             content.insertAdjacentHTML('beforeend', element);
         });
         this.addDropDown()
-        this.handleInput(optionsArray);
+        this.handleInput();
     }
 
     addDropDown () {
@@ -75,7 +74,10 @@ class Modal {
         options.forEach(o => {
             if(o.nextSibling?.style.display === 'none' && o.nextSibling?.dataset.level > o.dataset.level){
                 const element = `<div class="open">${openSVG}</div>`
-                o.lastElementChild.insertAdjacentHTML('beforeend', element);
+                o.lastElementChild.insertAdjacentHTML('afterbegin', element);
+            } else {
+                const element = `<div class="open"></div>`
+                o.lastElementChild.insertAdjacentHTML('afterbegin', element);
             }
         });
         const dropdowns = document.querySelectorAll('.open');
@@ -102,10 +104,15 @@ class Modal {
                     if (sibling.dataset.level <= level){
                         return;
                     }
-                    else if(sibling.nextSibling){
-                        console.log(sibling);
+                    else {
+                        if (sibling.lastElementChild.firstChild.className === 'close'){
+                        sibling.lastElementChild.firstChild.className = 'open';
+                        sibling.lastElementChild.firstChild.innerHTML = openSVG;
+                        }
                         sibling.setAttribute('style', 'display:none')
+                        if(sibling.nextSibling) {
                         return RecursiveClose(sibling.nextSibling, level);
+                        }
                     }
                 }
                 if (e.currentTarget.className === 'open'){
@@ -131,21 +138,53 @@ class Modal {
         this.handleClear();
     }
 
-    handleInput (optionsArray) {
+    handleInput () {
         const inputs = document.querySelectorAll('input[id]');
-        // console.log('inppppp', [...inputs]);
-        // console.log(optionsArray);
         [...inputs].forEach(input => input.addEventListener('click', (e) => {
+            const level = Number(e.target.parentNode.dataset.level);
             if (e.target.hasAttribute('checked')){
                 e.target.removeAttribute('checked')
+                function RecursiveUncheck (sibling, level){
+                    if (sibling.dataset.level <= level){
+                        return;
+                    }
+                    else {
+                        if (sibling.firstElementChild.hasAttribute('checked')){
+                            sibling.firstElementChild.removeAttribute('checked')
+                            sibling.firstElementChild.checked = false;
+                        }
+                        if(sibling.nextSibling) {
+                        return RecursiveUncheck(sibling.nextSibling, level);
+                        }
+                    }
+                }
+                if (e.target.parentNode.nextSibling) {
+                RecursiveUncheck(e.target.parentNode.nextSibling, level);
+                }
             } else {
             e.target.setAttribute('checked', 'checked')
+            function RecursiveCheck (sibling, level){
+                if (sibling.dataset.level <= level){
+                    return;
+                }
+                else {
+                    sibling.firstElementChild.setAttribute('checked', 'checked');
+                    sibling.firstElementChild.checked = true;
+                    if(sibling.nextSibling) {
+                    return RecursiveCheck(sibling.nextSibling, level);
+                    }
+                }
+            }
+            if (e.target.parentNode.nextSibling) {
+            RecursiveCheck(e.target.parentNode.nextSibling, level);
+            }
             }
         }))
     }
 
     handleApply () {
         const apply = document.querySelector('.apply-button');
+        const modal = document.getElementById("myModal");
         apply.addEventListener('click', ()=>{
             const checkedId = [...document.querySelectorAll('input[checked]')].map(input => input.id);
             const selectedNumber = checkedId.length
@@ -159,14 +198,16 @@ class Modal {
                 o.setAttribute('selected', 'selected')
                 }
             });
+            this.data.dispatchEvent(new Event('change'));
             const selectedString = [...this.data.selectedOptions].map(option => option.text).join(', ');
             selectedString ? input.value = selectedString : input.value = '';
+            modal.parentNode.removeChild(modal);
         })
     }
 
     handleClear () {
         const clear = document.querySelector('.clear-button');
-        clear.addEventListener('click', ()=> [...document.querySelectorAll('input[checked]')].forEach(e => e.removeAttribute('checked')))
+        clear.addEventListener('click', ()=> [...document.querySelectorAll('input[checked]')].forEach(e => e.removeAttribute('checked')));
     }
 
 }
@@ -209,7 +250,7 @@ class Input {
     }
 
     addListeners(input, button) {
-       this.data.addEventListener('change', e => alert(e.target.value));
+    //    this.data.addEventListener('change', e => alert('В селекте ' + e.target.name + ' изменились значения')); // "Вешаем" на <select>, который меняем, обработчик события change
        input.addEventListener('click', () => new Modal(this.data, this.num));
        button.addEventListener('click', () => new Modal(this.data, this.num));
     }
