@@ -207,7 +207,10 @@ class Modal {
 
     handleClear () {
         const clear = document.querySelector('.clear-button');
-        clear.addEventListener('click', ()=> [...document.querySelectorAll('input[checked]')].forEach(e => e.removeAttribute('checked')));
+        clear.addEventListener('click', ()=> [...document.querySelectorAll('input[checked]')].forEach(e => {
+            e.removeAttribute('checked');
+            e.checked = false;
+        }));
     }
 
 }
